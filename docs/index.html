@@ -1,0 +1,102 @@
+<!doctype html>
+
+<meta charset="utf-8" />
+
+<title>Fiberify demo and benchmark</title>
+<script src="../fiberify.js"></script>
+<script>
+  // First, we wrap it in fiberify, make it an async function and add
+  // await to the recursive calls.
+
+  let calls = 0;
+
+  const simple = fiberify(async n => {
+    calls++;
+    let s = 1;
+    for (let i = 0; i < n; i++) s += await simple(i);
+    return s;
+  });
+
+  const direct = n => {
+    calls++;
+    let s = 1;
+    for (let i = 0; i < n; i++) s += direct(i);
+    return s;
+  }
+
+  function log(...things) {
+    logs.value += things.map(thing => typeof thing === 'string' ? thing : JSON.stringify(thing)).join(' ') + '\n';
+  }
+  const N = 19;
+
+  async function run(func) {
+    total = 0;
+    calls = 0;
+    rno = 0;
+    log('');
+    const start = Date.now();
+    const result = await func(N);
+    const wall = Date.now() - start;
+    log('Result', result);
+    if (rno) log('Runs', rno);
+    if (calls) log('Calls', calls);
+    if (total) log('Runtime', total);
+    log('Wall time', wall);
+  }
+
+</script>
+
+<style>
+  @keyframes rotate {
+    0% {
+      transform: rotate(0);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .title {
+    height: 300px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .title-text {
+    font-size: 3em;
+    <!-- animation: 2s rotate linear infinite; -->
+  }
+
+  .logs {
+    display: block;
+    width: 100%
+  }
+</style>
+
+<div class='title'>
+  <div class='title-text'>Fiberify</div>
+</div>
+
+<div class='buttons'>
+  <button onClick='run(direct)'>Run without fibers</button>
+  <button onClick='run(simple)'>Run with fibers</button>
+  <button onClick='logs.value=""'>Clear</button>
+</div>
+
+<textarea rows='30' class='logs'>
+</textarea>
+
+<script>
+  const logs = document.querySelector('.logs');
+  const title = document.querySelector('.title-text');
+
+  let angle = 0;
+  rotate = () => {
+    title.style.transform = `rotate(${angle}deg)`;
+    angle = (angle + 1) % 360;
+    requestAnimationFrame(rotate);
+  };
+  rotate();
+</script>
